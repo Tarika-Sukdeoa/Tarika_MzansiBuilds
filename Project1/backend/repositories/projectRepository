@@ -1,0 +1,145 @@
+//SRP
+//Repository pattern: Abstract database queries from business logic
+
+const Project = require("../models/project");
+
+class ProjectRepository{
+
+
+    async create(projectData){
+        return await Project.create(projectData);
+    }
+
+    //Get all the active projects
+    async findAllActive(){
+        return await Project.find({status: "active"})
+        .populate("owner", "username avatar")
+        .populate("collaborators", "username avatar")
+        .sort({createdAt: -1});
+    }
+
+    //Find project by project id
+    async findById(id){
+        return await Project.findById(id)
+        .populate("owner", "username avatar bio")
+        .populate("collaborators", "username avatar");
+    }
+
+    //Find projects by owner id
+    async findByOwner(ownerId){
+        return await Project.find({owner: ownerId})
+        .sort({createdAt: -1});
+    }
+
+    //Find active projects using owner id
+    async findActiveByOwner(ownerId){
+        return await Project.find({owner: ownerId, status: "active"})
+        .sort({createdAt: -1});
+
+    }
+
+    //Find completed pojhects using the owner id
+    async findCompletedByOwner(ownerId){
+        return await Project.find({owner: ownerId, status: "completed"})
+            .sort({createdAt: -1});
+        
+    }
+
+    //Add milestone to project
+    async addMilestone(projectId, milestoneData){
+        return await Project.findByIdAndUpdate(
+
+            projectId,
+            {$push: {milestones: milestoneData}},
+            {new: true, runValidators: true}
+        );
+    }
+
+    //Mark project as complete
+    async completeProject(projectId){
+        return await Project.findByIdAndUpdate(
+            projectId,
+            {$set: {status: "completed", completedAt: new Date()}},
+            {new: true}
+        );
+    }
+
+    //Add collaborator to the project
+    async addCollaborator(projectId, userId){
+        return await Project.findByIdAndUpdate(
+            projectId,
+            {$addToSet: {collaborators: userId}},
+            {new: true}
+        );
+    }
+
+    async removeCollaborator(projectId, userId){
+        return await Project.findByIdAndUpdate(
+            projectId,
+            {$pull: {collaborators: userId}},
+            {new: true}
+        );
+    }
+
+    //get recent completed projects for global celebration wall
+    async getGlobalCompletedProjects(limit = 20){
+        return await Project.find({status: "completed"})
+        .populate("owner", "username avatar")
+        .sort({completedAt: -1})
+        .limit(limit);
+
+    }
+
+
+    //Update project stage
+    async updateStage(projectId, stage){
+        return await Project.findByIdAndUpdate(
+            projectId,
+            {$set: {stage: stage},},
+            {new: true}
+        );
+    }
+
+    //Delete project, only owner can perform this operation
+    async deleteProject(projectId){
+        return await Project.findByIdAndDelete(projectId);
+    }
+
+    //Search for projects by using the title and description
+    async searchProjects(searchTerm){
+        return await Project.find({
+            status: "active",
+            $or:[
+                {title: {$regex: searchTerm, $options: "i"}},
+                {description: {$regex: searchTerm, $options: "i"}}
+            ]
+        })
+        .populate("owner", "username avatar")
+        .sort({createdAt: -1});
+    }
+
+    //Filter projects by the stage
+    async findByStage(stage){
+        return await Project.find({status: "active", stage: stage})
+        .populate("owner", "username avatar")
+        .sort({createdAt: -1});
+    }
+
+    //Count projects owned by the user
+    async countUserProjects(ownerId){
+        return await Project.countDocuments({owner: ownerId});
+    }
+
+    //Count completed projects owned by the user 
+    async countUserCompletedProjects(userId){
+        return await Project.countDocuments({owner: userId, stage: "completed"});
+    }
+
+}
+
+module.exports = new ProjectRepository();
+
+
+
+
+
