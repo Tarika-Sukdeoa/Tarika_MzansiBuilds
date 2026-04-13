@@ -2,7 +2,7 @@ import { useState } from "react";
 import {useNavigate, Link} from "react-router-dom";
 import api from "../services/api";
 
-const Register = () => {
+const Register = ({onRegister}) => {
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
@@ -35,6 +35,9 @@ const Register = () => {
             //Save token to local storage
             localStorage.setItem("token", response.data.data.token);
             localStorage.setItem("user", JSON.stringify(response.data.data.user));
+
+          //tell app.js that the user is authemnticated
+          if(onRegister) onRegister();
 
             navigate("/dashboard");
         }catch(err){

@@ -2,7 +2,7 @@ import {useState} from "react";
 import {useNavigate, Link} from "react-router-dom";
 import api from "../services/api";
 
-const Login = () =>{
+const Login = ({onLogin}) =>{
 
     //Adding set states to componenets
     const navigate = useNavigate();
@@ -23,6 +23,9 @@ const Login = () =>{
             //Saving token to local storage
             localStorage.setItem("token", response.data.data.token);
             localStorage.setItem("user", JSON.stringify(response.data.data.user));
+
+            //Sends a message to app.js that the user is authenticated
+            if(onLogin) onLogin();
 
             navigate("/dashboard");
     

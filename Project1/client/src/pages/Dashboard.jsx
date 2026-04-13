@@ -1,6 +1,6 @@
 //dashboard.jsx
 
-import {useEffect, useState} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {useNavigate, Link} from "react-router-dom";
 import api from "../services/api";
 
@@ -12,9 +12,12 @@ const Dashboard = () =>{
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("all");
+    const [error, setError] = useState(null);
 
     //get the projects
-    const fetchProjects = async () =>{
+    const fetchProjects = useCallback(async () =>{
+      setLoading(true);
+      setError(null);
         try{
             let projectResponse;
         
@@ -43,7 +46,7 @@ const Dashboard = () =>{
             setLoading(false);
         }
     
-    };
+    }, [activeTab, navigate]);
 
     useEffect(() => {
 
@@ -62,7 +65,7 @@ const Dashboard = () =>{
         }
 
         fetchProjects();
-    }, [navigate, activeTab]);
+    }, [navigate, activeTab, fetchProjects]);
 
 
     
@@ -73,6 +76,10 @@ const Dashboard = () =>{
         localStorage.removeItem("user");
         navigate("/login");
     }
+
+    const handleRetry = () =>{
+      fetchProjects();
+    };
 
     const handleDeleteProject = async (projectId) =>{
         if (window.confirm("Are you sure that you want to delete this project?")){
@@ -86,6 +93,32 @@ const Dashboard = () =>{
         }
     };
 
+    if (error && !loading){
+      return (
+      <div className="min-h-screen flex items-center justify-center bg-dark">
+        <div className="text-center bg-gray-900 p-8 rounded-lg max-w-md">
+          <div className="text-red-500 text-xl mb-4">⚠️ {error}</div>
+          <p className="text-gray-400 mb-4">Could not load your dashboard.</p>
+          <button
+              onClick={handleRetry}
+            className="bg-primary text-dark px-6 py-2 rounded-lg hover:bg-green-600 transition"
+          >
+            Try Again
+          </button>
+          <button
+            onClick={handleLogout}
+            className="ml-3 bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+        
+      
+
+    }
+
     if(loading){
          return (
             <div className="min-h-screen flex items-center justify-center bg-dark">
@@ -93,6 +126,7 @@ const Dashboard = () =>{
             </div>
         );
     }
+
 
     return (
         <div className="min-h-screen bg-dark">
@@ -246,7 +280,9 @@ const Dashboard = () =>{
     </div>
   );
 
-}
+};
+
+export default Dashboard;
 
     
 
