@@ -11,8 +11,10 @@ const Dashboard = () =>{
     const [projects, setProjects] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState("all");
+    const [myProjectsTab, setMyProjectsTab] = useState("all");
+    const [filter, setFilter] = useState("all");
     const [error, setError] = useState(null);
+
 
     //get the projects
     const fetchProjects = useCallback(async () =>{
@@ -22,12 +24,20 @@ const Dashboard = () =>{
             let projectResponse;
         
 
-            if (activeTab === "all"){
-                projectResponse = await api.get("/projects/my/projects");
-            }else if (activeTab === "active"){
-                projectResponse = await api.get("/projects/my/projects/active");
-            }else{
-                projectResponse = await api.get("/projects/my/projects/completed");
+            if (myProjectsTab === "all"){
+              
+              projectResponse = await api.get("/projects")
+                
+            }else if (myProjectsTab === "my"){
+      
+
+                if(filter === "all"){
+                  projectResponse = await api.get("/projects/my/projects");
+                }else if (filter === "active"){
+                  projectResponse = await api.get("/projects/my/projects/active");
+                }else{
+                  projectResponse = await api.get("/projects/my/projects/completed")
+                }
             }
 
             setProjects(projectResponse.data.data || []);
@@ -46,7 +56,7 @@ const Dashboard = () =>{
             setLoading(false);
         }
     
-    }, [activeTab, navigate]);
+    }, [myProjectsTab, filter, navigate]);
 
     useEffect(() => {
 
@@ -65,7 +75,7 @@ const Dashboard = () =>{
         }
 
         fetchProjects();
-    }, [navigate, activeTab, fetchProjects]);
+    }, [navigate, myProjectsTab, fetchProjects]);
 
 
     
@@ -135,6 +145,9 @@ const Dashboard = () =>{
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
                     <h1 className="text-2xl font-bold text-primary">MzansiBuilds</h1>
                     <div className="flex items-center gap-4">
+                      <Link to="/celebration-wall" className = "text-yellow-500 hover:text-yellow-400 transition">
+                        🏆 Celebration Wall
+                      </Link>
                         <span className="text-secondary">Welcome, {user?.username}!</span>
                         <button
                             onClick={handleLogout}
@@ -170,9 +183,13 @@ const Dashboard = () =>{
         <div className="flex justify-between items-center mb-6">
           <div className="flex gap-2">
             <button
-              onClick={() => setActiveTab("all")}
+              onClick={() => {
+                setMyProjectsTab("all");
+                setFilter("all");
+
+              }}
               className={`px-4 py-2 rounded-lg transition ${
-                activeTab === "all"
+                myProjectsTab === "all"
                   ? "bg-primary text-dark font-semibold"
                   : "bg-gray-800 text-secondary hover:bg-gray-700"
               }`}
@@ -180,25 +197,19 @@ const Dashboard = () =>{
               All Projects
             </button>
             <button
-              onClick={() => setActiveTab("active")}
+              onClick={() => {
+                setMyProjectsTab("my");
+                setFilter("all");
+              }}
               className={`px-4 py-2 rounded-lg transition ${
-                activeTab === "active"
+                myProjectsTab=== "my"
                   ? "bg-primary text-dark font-semibold"
                   : "bg-gray-800 text-secondary hover:bg-gray-700"
               }`}
             >
-              Active
+              My Projects
             </button>
-            <button
-              onClick={() => setActiveTab("completed")}
-              className={`px-4 py-2 rounded-lg transition ${
-                activeTab === "completed"
-                  ? "bg-primary text-dark font-semibold"
-                  : "bg-gray-800 text-secondary hover:bg-gray-700"
-              }`}
-            >
-              Completed
-            </button>
+
           </div>
           <Link
             to="/create-project"
@@ -208,13 +219,56 @@ const Dashboard = () =>{
           </Link>
         </div>
 
+        {/*Filter buttons, only visible for the myProjects tab */}
+        {myProjectsTab === "my" && (
+          <div className="flex justify-end mb-6">
+            <div className="flex gap-2 bg-gray-800 rounded-lg p-1">
+              <button
+                onClick={() => setFilter("all")}
+                className={`px-4 py-2 rounded-lg text-sm transition ${
+                  filter === "all"
+                    ? "bg-primary text-dark"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                All
+
+              </button>
+
+              <button
+              onClick={() => setFilter("active")}
+                className={`px-4 py-2 rounded-lg text-sm transition ${
+                  filter === "active"
+                    ? "bg-primary text-dark"
+                    : "text-gray-400 hover:text-white"
+                }`}
+                >
+                  Active
+              </button>
+
+              <button
+              onClick={() => setFilter("completed")}
+                className={`px-4 py-2 rounded-lg text-sm transition ${
+                  filter === "completed"
+                    ? "bg-primary text-dark"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Completed
+
+              </button>
+            </div>
+          </div>
+
+        )}
+
         {/* Projects List */}
         {projects.length === 0 ? (
           <div className="text-center py-12 bg-gray-900 rounded-lg border border-gray-800">
             <p className="text-gray-400 mb-4">
-              {activeTab === "all"
+              {myProjectsTab === "all"
                 ? "You haven't created any projects yet."
-                : activeTab === "active"
+                : myProjectsTab === "active"
                 ? "You don't have any active projects."
                 : "You haven't completed any projects yet."}
             </p>

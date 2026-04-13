@@ -10,6 +10,8 @@ const ProjectDetail = () =>{
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+
 
     const [milestoneTitle, setMilestoneTitle] = useState("");
     const [milestoneDescription, setMilestoneDescription] = useState("");

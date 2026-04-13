@@ -176,6 +176,24 @@ class ProjectController{
         }
     }
 
+    async getGlobalCompleted(req, res, next){
+
+         try{
+            const projects = await ProjectService.getGlobalCompleted();
+
+            res.status(200).json({
+                success: true,
+                count: projects.length,
+                data: projects
+            });
+    
+        }catch(error){
+            next(error);
+        }
+
+
+    }
+
     async updateProjectStage(req, res, next){
         try{
             const {id} = req.params;

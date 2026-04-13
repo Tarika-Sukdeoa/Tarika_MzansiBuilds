@@ -45,6 +45,11 @@ class ProjectRepository{
         
     }
 
+    async findGlobalCompleted(){
+        return await Project.find({status: "completed"})
+        .sort({createdAt: -1});
+    }
+
     //Add milestone to project
     async addMilestone(projectId, milestoneData){
         return await Project.findByIdAndUpdate(
@@ -133,6 +138,12 @@ class ProjectRepository{
     //Count completed projects owned by the user 
     async countUserCompletedProjects(userId){
         return await Project.countDocuments({owner: userId, stage: "completed"});
+    }
+
+    async findAllActiveGlobal(){
+        return await Project.find({status: "active"})
+        .populate("owner", "username avatar")
+        .sort({createdAt: -1});
     }
 
 }

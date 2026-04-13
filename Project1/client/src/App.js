@@ -1,24 +1,17 @@
 //App.js 
 
 import {BrowserRouter as Router, Routes, Route, Navigate} from "react-router-dom";
-import {useState, useEffect, use} from "react";
+import {useState, useEffect} from "react";
 import Login from "./pages/Login";
 import Register from "./pages/Register"
 import Dashboard from "./pages/Dashboard";
 import CreateProject from "./pages/CreateProject";
 import ProjectDetail from "./pages/ProjectDetail";
+import CelebrationWall from "./pages/CelebrationWall";
 
 function App(){
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
 
-  const handleLogin =() =>{
-    setIsAuthenticated(true);
-    window.location.href = "/dashboard";
-  }
-  const handleLogOut = () =>{
-    setIsAuthenticated(false);
-    window.location.href = "/login";
-  }
 
   useEffect(() => {
 
@@ -44,6 +37,7 @@ function App(){
         <Route path = "/create-project" element={isAuthenticated ? <CreateProject />: <Navigate to ="/login"/>}/>
         <Route path="/projects/:id" element={isAuthenticated ? <ProjectDetail/>: <Navigate to="/login"/>}/>
         <Route path ="/" element={<Navigate to ="/login"/>}/>
+        <Route path = "/celebration-wall" element ={<CelebrationWall/>}/>
 
       </Routes>
 
