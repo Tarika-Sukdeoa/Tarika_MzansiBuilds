@@ -24,6 +24,7 @@ const Login = ({onLogin}) =>{
             localStorage.setItem("token", response.data.data.token);
             localStorage.setItem("user", JSON.stringify(response.data.data.user));
 
+            window.location.href = "/dashboard";
             //Sends a message to app.js that the user is authenticated
             if(onLogin) onLogin();
 
