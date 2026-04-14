@@ -13,6 +13,13 @@ const ProjectDetail = () =>{
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
+    // Comment state
+    const [comments, setComments] = useState([]);
+    const [newComment, setNewComment] = useState("");
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editingCommentText, setEditingCommentText] = useState("");
+    const [loadingComments, setLoadingComments] = useState(false);
+
     // Collaboration state
     const [showCollaborationForm, setShowCollaborationForm] = useState(false);
     const [collaborationMessage, setCollaborationMessage] = useState("");
@@ -81,6 +88,12 @@ const ProjectDetail = () =>{
         fetchCollaborationRequests();
         }
     }, [project, currentUserId]);
+
+    useEffect(() =>{
+      if(project){
+        fetchComments();
+      }
+    }, [project]);
 
 
     //Adding a milestone
@@ -174,6 +187,7 @@ const ProjectDetail = () =>{
         
     };
 
+
     const isCollaborator = project?.collaborators?.some(
         collab => collab._id === currentUserId
     );
@@ -225,6 +239,90 @@ const handleRejectRequest = async (requestId) => {
     setError(error.response?.data?.message || "Failed to reject request");
   }
 };
+
+// Fetch comments for this project
+const fetchComments = async () => {
+    setLoadingComments(true);
+    try {
+        const response = await api.get(`/projects/${id}/comments`);
+        setComments(response.data.data || []);
+    } catch (error) {
+        console.error("Failed to fetch comments:", error);
+    } finally {
+        setLoadingComments(false);
+    }
+};
+
+// Add a new comment
+const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) {
+        setError("Comment cannot be empty");
+        return;
+    }
+    
+    try {
+        const response = await api.post(`/projects/${id}/comments`, {
+            body: newComment.trim()
+        });
+        setComments([response.data.data, ...comments]);
+        setNewComment("");
+        setSuccess("Comment added!");
+        setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+        setError(error.response?.data?.message || "Failed to add comment");
+    }
+};
+
+// Start editing a comment
+const startEditComment = (comment) => {
+    setEditingCommentId(comment._id);
+    setEditingCommentText(comment.body);
+};
+
+// Cancel editing
+const cancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentText("");
+};
+
+// Save edited comment
+const saveEditComment = async (commentId) => {
+    if (!editingCommentText.trim()) {
+        setError("Comment cannot be empty");
+        return;
+    }
+    
+    try {
+        const response = await api.put(`/projects/${id}/comments/${commentId}`, {
+            body: editingCommentText.trim()
+        });
+        setComments(comments.map(comment => 
+            comment._id === commentId ? response.data.data : comment
+        ));
+        setEditingCommentId(null);
+        setEditingCommentText("");
+        setSuccess("Comment updated!");
+        setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+        setError(error.response?.data?.message || "Failed to update comment");
+    }
+};
+
+// Delete a comment
+const handleDeleteComment = async (commentId) => {
+    if (window.confirm("Are you sure you want to delete this comment?")) {
+        try {
+            await api.delete(`/projects/${id}/comments/${commentId}`);
+            setComments(comments.filter(comment => comment._id !== commentId));
+            setSuccess("Comment deleted!");
+            setTimeout(() => setSuccess(""), 3000);
+        } catch (error) {
+            setError(error.response?.data?.message || "Failed to delete comment");
+        }
+    }
+};
+
 
     if(loading){
         return (
@@ -598,6 +696,95 @@ const handleRejectRequest = async (requestId) => {
     </form>
   </div>
 )}
+
+{/* Comments Section */}
+<div className="bg-gray-900 rounded-lg shadow-xl p-6 md:p-8 border border-gray-800 mt-6">
+    <h2 className="text-2xl font-bold text-primary mb-4">Comments</h2>
+    
+    {/* Add Comment Form */}
+    <form onSubmit={handleAddComment} className="mb-6">
+        <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Share your thoughts or ask a question..."
+            rows={3}
+            className="w-full px-4 py-2 bg-gray-800 text-secondary rounded-lg border border-gray-700 focus:outline-none focus:border-primary mb-3"
+        />
+        <button
+            type="submit"
+            className="bg-primary text-dark px-4 py-2 rounded-lg font-semibold hover:bg-green-600 transition"
+        >
+            Post Comment
+        </button>
+    </form>
+    
+    {/* Comments List */}
+    {loadingComments ? (
+        <p className="text-gray-500 text-center py-4">Loading comments...</p>
+    ) : comments.length === 0 ? (
+        <p className="text-gray-500 text-center py-4">No comments yet. Be the first to comment!</p>
+    ) : (
+        <div className="space-y-4 max-h-96 overflow-y-auto">
+            {comments.map((comment) => (
+                <div key={comment._id} className="bg-gray-800 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <span className="text-primary font-semibold">
+                                {comment.commenter?.username || "Unknown User"}
+                            </span>
+                            <span className="text-gray-500 text-xs ml-2">
+                                {new Date(comment.createdAt).toLocaleDateString()}
+                            </span>
+                        </div>
+                        {(comment.commenter?._id === currentUserId || isOwner) && (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => startEditComment(comment)}
+                                    className="text-yellow-500 hover:text-yellow-400 text-sm transition"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteComment(comment._id)}
+                                    className="text-red-500 hover:text-red-400 text-sm transition"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {editingCommentId === comment._id ? (
+                        <div>
+                            <textarea
+                                value={editingCommentText}
+                                onChange={(e) => setEditingCommentText(e.target.value)}
+                                className="w-full px-4 py-2 bg-gray-700 text-secondary rounded-lg border border-gray-600 focus:outline-none focus:border-primary mb-2"
+                                rows={2}
+                            />
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => saveEditComment(comment._id)}
+                                    className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700 transition"
+                                >
+                                    Save
+                                </button>
+                                <button
+                                    onClick={cancelEditComment}
+                                    className="bg-gray-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-gray-700 transition"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-gray-300">{comment.body}</p>
+                    )}
+                </div>
+            ))}
+        </div>
+    )}
+</div>
 
 
         {/* Error Message */}
