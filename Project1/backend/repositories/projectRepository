@@ -137,7 +137,7 @@ class ProjectRepository{
 
     //Count completed projects owned by the user 
     async countUserCompletedProjects(userId){
-        return await Project.countDocuments({owner: userId, stage: "completed"});
+        return await Project.countDocuments({owner: userId, status: "completed"});
     }
 
     async findAllActiveGlobal(){
